@@ -1,8 +1,22 @@
 * {
+  box-sizing: border-box;
   user-select: none;
+  margin: 0;
+  padding: 0;
+}
+
+body,
+html {
+  height: 100%;
+}
+
+div#root {
+  height: 100%;
 }
 
 .App {
+  color: white;
+  background-color: rgb(218, 218, 218);
   position: relative;
   font-family: sans-serif;
   text-align: center;
@@ -14,36 +28,60 @@
 
 .one {
   background-color: green;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
 }
 
 .two {
   background-color: red;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
 }
 
 .three {
   background-color: blue;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
 }
 
 .divider {
-  background: yellow;
+  padding-inline: 6px;
+  z-index: 600;
+  background: rgb(42, 86, 145);
   position: absolute;
-  cursor: row-resize;
   align-self: stretch;
   display: flex;
+  flex-direction: row;
+  align-content: center;
+  justify-content: space-between;
   align-items: center;
-  height: 10px;
+  height: 24px;
   width: 100%;
-  transform: translateY(-5px);
+  transform: translateY(-12px);
 }
 
 .divider-dragging {
-  background-color: orange;
-  position: absolute;
+  background-color: rgb(67, 127, 206);
+}
+
+.divider > button {
+  z-index: 1000;
+  pointer-events: auto;
+  border: none;
+  height: auto;
+  padding-inline: 12px;
+  background-color: gray;
+}
+
+.drag-button {
   cursor: row-resize;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  height: 10px;
-  width: 100%;
-  transform: translateY(-5px);
 }
