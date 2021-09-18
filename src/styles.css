@@ -1,0 +1,49 @@
+* {
+  user-select: none;
+}
+
+.App {
+  position: relative;
+  font-family: sans-serif;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  height: 100%;
+}
+
+.one {
+  background-color: green;
+}
+
+.two {
+  background-color: red;
+}
+
+.three {
+  background-color: blue;
+}
+
+.divider {
+  background: yellow;
+  position: absolute;
+  cursor: row-resize;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  height: 10px;
+  width: 100%;
+  transform: translateY(-5px);
+}
+
+.divider-dragging {
+  background-color: orange;
+  position: absolute;
+  cursor: row-resize;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  height: 10px;
+  width: 100%;
+  transform: translateY(-5px);
+}
