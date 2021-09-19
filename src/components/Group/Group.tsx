@@ -29,18 +29,18 @@ interface Props {
 }
 
 interface Link {
-  index: number;
-  prev: HTMLElement;
-  prevPercent: number;
   current: HTMLElement;
-  currentPercent: number;
-  parent: HTMLElement;
   divider: HTMLElement;
-  dividerSize: number;
-  start: number;
-  end: number;
-  size: number;
   fold: boolean;
+  index: number;
+  parent: HTMLElement;
+  prev: HTMLElement;
+  _currentPercent: number;
+  _dividerSize: number;
+  _end: number;
+  _prevPercent: number;
+  _size: number;
+  _start: number;
 }
 
 const getInnerSize = (direction: Direction, element: HTMLElement) => {
@@ -91,29 +91,30 @@ const generateLinksAtom = atom(null, (get, set, update: any) => {
           current.getBoundingClientRect().width;
 
     array.push({
-      index: index,
-      prev,
-      prevPercent: 100 / children.length,
       current,
-      currentPercent: 100 / children.length,
-      parent,
       divider,
-      dividerSize,
-      start,
-      end,
-      size,
       fold: false,
+      index: index,
+      parent,
+      prev,
+      _currentPercent: 100 / children.length,
+      _dividerSize: dividerSize,
+      _end: end,
+      _prevPercent: prev ? 100 / children.length : undefined,
+      _size: prev ? size : undefined,
+      _start: start,
     } as Link);
   });
   set(linksAtom, array);
 });
 
 const calculateSizesAtom = atom(null, (get, set, update: any) => {
-  const { direction } = update;
+  const { direction, index } = update;
   const links = get(linksAtom);
-  const index = get(dividerIndexAtom);
 
   const link = links[index];
+  const linkLast = links[links.length - 1];
+
   const parentSize = getInnerSize(direction, link.parent);
   const dividerHeight = link.divider.clientHeight;
 
@@ -121,22 +122,26 @@ const calculateSizesAtom = atom(null, (get, set, update: any) => {
   let currentPercent;
 
   if (direction === Direction.Column) {
-    const prev = link.prev.getBoundingClientRect();
+    console.log("calculateSizes");
+
+    const prevHeight = link.prev?.getBoundingClientRect().height || 0;
+    const prevTop = link.prev?.getBoundingClientRect().top || 0;
+    prevPercent = ((prevHeight + dividerHeight) / parentSize) * 100;
+    link._prevPercent = prevPercent;
+
     const current = link.current.getBoundingClientRect();
-
-    prevPercent = ((prev.height + dividerHeight) / parentSize) * 100;
     currentPercent = ((current.height + dividerHeight) / parentSize) * 100;
+    link._currentPercent = currentPercent;
 
-    link.prevPercent = prevPercent;
-    link.currentPercent = currentPercent;
+    link._start = prevTop;
+    link._end = current.bottom;
+    link._size = prevHeight + dividerHeight * 2 + current.height;
 
-    link.start = prev.top;
-    link.end = current.bottom;
-
-    link.size = prev.height + dividerHeight * 2 + current.height;
+    // Calculate rest size for last box
   } else {
   }
 
+  links[index] = link;
   set(linksAtom, links);
 });
 
@@ -218,19 +223,19 @@ const Group: FC<Props> = ({
       const link = links[dividerIndex];
       const isColumn = direction === Direction.Column;
 
-      const percent = link.prevPercent + link.currentPercent;
-      const dividerSize = link.dividerSize;
-      let offset = (isColumn ? e.clientY : e.clientX) - link.start;
+      const percent = link._prevPercent + link._currentPercent;
+      const dividerSize = link._dividerSize;
+      let offset = (isColumn ? e.clientY : e.clientX) - link._start;
 
       // MIN SIZES
       if (offset < dividerSize + 80) {
         offset = dividerSize + 80;
       }
-      if (offset >= link.size - (dividerSize + 80)) {
-        offset = link.size - (dividerSize + 80);
+      if (offset >= link._size - (dividerSize + 80)) {
+        offset = link._size - (dividerSize + 80);
       }
 
-      const prevPercent = (offset / link.size) * percent;
+      const prevPercent = (offset / link._size) * percent;
       const currentPercent = percent - prevPercent;
 
       if (direction === Direction.Column) {
@@ -246,20 +251,48 @@ const Group: FC<Props> = ({
 
   const fold = useCallback(
     (e: React.MouseEvent, direction: Direction, dividerIndex: number) => {
-      const link = links[dividerIndex];
+      const link: Link = links[dividerIndex];
+      const lastLink = links[links.length - 1];
       const isColumn = direction === Direction.Column;
+      const isLastLink = dividerIndex === links.length - 1;
 
-      const percent = link.prevPercent + link.currentPercent;
-      const dividerSize = link.dividerSize;
+      const percent = link._prevPercent + link._currentPercent;
+      const dividerSize = link._dividerSize;
+      const parentSize = getInnerSize(direction, link.parent);
 
       if (!link.fold) {
         if (isColumn) {
-          link.prev.style.height = `calc(${percent}% - ${dividerSize}px)`;
+          console.log("lastLink", lastLink);
+
+          if (link.prev && !links[dividerIndex - 1].fold) {
+            const doubleDividerSize = isLastLink
+              ? dividerSize * 2
+              : dividerIndex;
+            link.prev.style.height = `calc(${percent}% - ${doubleDividerSize}px)`;
+          }
+
+          link.fold = true;
           link.current.style.height = `calc(0%)`;
+
+          if (dividerIndex !== links.length - 1) {
+            lastLink.current.style.height = `calc(${
+              ((parentSize - lastLink._start) / parentSize) * 100
+            }% - 18px)`;
+          }
         } else {
-          link.current.style.width = `calc(0% - ${dividerSize}px)`;
+          // ROW FOLD -> here
         }
       } else {
+        if (isColumn) {
+          const calc = isLastLink
+            ? `calc(${((parentSize - link._start) / parentSize) * 100}% - 18px)`
+            : `calc(${(80 / parentSize) * 100}%)`;
+
+          link.fold = false;
+          link.current.style.height = calc;
+        } else {
+          // ROW FOLD -> here
+        }
       }
 
       console.log(links);
@@ -270,26 +303,29 @@ const Group: FC<Props> = ({
   const handleDividerMouseDown = (e: React.MouseEvent, index: number) => {
     e.preventDefault();
     if (index === 0) return;
+    calculateSizes({ direction, index });
     startDrag(index);
-    calculateSizes({ direction });
   };
 
   const handleCollapse = (e: React.MouseEvent, index: number) => {
-    console.log(e, index);
     e.preventDefault();
     fold(e, direction, index);
-    calculateSizes({ direction });
+    calculateSizes({ direction, index });
   };
 
-  useEventListener("mousemove", (e: React.MouseEvent) => {
-    if (!dragging) return;
-    drag(e, direction, dividerIndex);
-  });
+  useEventListener(
+    "mousemove",
+    (e: React.MouseEvent) => {
+      if (!dragging) return;
+      drag(e, direction, dividerIndex);
+    },
+    [dragging, drag]
+  );
 
   useEventListener("mouseup", (e: React.MouseEvent) => {
     if (!dragging) return;
     stopDrag();
-    calculateSizes({ direction });
+    calculateSizes({ direction, index: dividerIndex });
   });
 
   useEffect(() => {
