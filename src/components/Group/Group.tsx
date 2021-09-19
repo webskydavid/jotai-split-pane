@@ -33,15 +33,18 @@ interface Link {
   divider: HTMLElement;
   fold: boolean;
   index: number;
+  next: HTMLElement;
   parent: HTMLElement;
   prev: HTMLElement;
   _currentPercent: number;
   _dividerSize: number;
   _end: number;
   _prevPercent: number;
-  _size: number;
+  _pairSize: number;
   _start: number;
 }
+
+const MIN_SIZE = 10;
 
 const getInnerSize = (direction: Direction, element: HTMLElement) => {
   // Get style to calculate size
@@ -65,6 +68,7 @@ const generateLinksAtom = atom(null, (get, set, update: any) => {
     const prev = children[index - 1];
     const divider = dividers[index];
     const current = children[index];
+    const next = children[index + 1];
 
     const dividerSize =
       direction === Direction.Column
@@ -95,13 +99,14 @@ const generateLinksAtom = atom(null, (get, set, update: any) => {
       divider,
       fold: false,
       index: index,
+      next,
       parent,
       prev,
       _currentPercent: 100 / children.length,
       _dividerSize: dividerSize,
       _end: end,
       _prevPercent: prev ? 100 / children.length : undefined,
-      _size: prev ? size : undefined,
+      _pairSize: prev ? size : undefined,
       _start: start,
     } as Link);
   });
@@ -111,10 +116,7 @@ const generateLinksAtom = atom(null, (get, set, update: any) => {
 const calculateSizesAtom = atom(null, (get, set, update: any) => {
   const { direction, index } = update;
   const links = get(linksAtom);
-
   const link = links[index];
-  const linkLast = links[links.length - 1];
-
   const parentSize = getInnerSize(direction, link.parent);
   const dividerHeight = link.divider.clientHeight;
 
@@ -135,13 +137,16 @@ const calculateSizesAtom = atom(null, (get, set, update: any) => {
 
     link._start = prevTop;
     link._end = current.bottom;
-    link._size = prevHeight + dividerHeight * 2 + current.height;
+    link._pairSize = prevHeight + dividerHeight * 2 + current.height;
 
     // Calculate rest size for last box
   } else {
   }
 
   links[index] = link;
+
+  console.log("fff", links[index]);
+
   set(linksAtom, links);
 });
 
@@ -165,6 +170,8 @@ const Group: FC<Props> = ({
 
   childRef.current = [];
   dividerRef.current = [];
+
+  console.log(links);
 
   const init = useCallback(
     (
@@ -221,6 +228,9 @@ const Group: FC<Props> = ({
   const drag = useCallback(
     (e: React.MouseEvent, direction: Direction, dividerIndex: number) => {
       const link = links[dividerIndex];
+      const prevLink = links[dividerIndex - 1];
+      if (link.fold || prevLink.fold) return;
+
       const isColumn = direction === Direction.Column;
 
       const percent = link._prevPercent + link._currentPercent;
@@ -228,14 +238,14 @@ const Group: FC<Props> = ({
       let offset = (isColumn ? e.clientY : e.clientX) - link._start;
 
       // MIN SIZES
-      if (offset < dividerSize + 80) {
-        offset = dividerSize + 80;
+      if (offset < dividerSize + MIN_SIZE) {
+        offset = dividerSize + MIN_SIZE;
       }
-      if (offset >= link._size - (dividerSize + 80)) {
-        offset = link._size - (dividerSize + 80);
+      if (offset >= link._pairSize - (dividerSize + MIN_SIZE)) {
+        offset = link._pairSize - (dividerSize + MIN_SIZE);
       }
 
-      const prevPercent = (offset / link._size) * percent;
+      const prevPercent = (offset / link._pairSize) * percent;
       const currentPercent = percent - prevPercent;
 
       if (direction === Direction.Column) {
@@ -274,7 +284,7 @@ const Group: FC<Props> = ({
           link.fold = true;
           link.current.style.height = `calc(0%)`;
 
-          if (dividerIndex !== links.length - 1) {
+          if (!lastLink.fold && dividerIndex !== links.length - 1) {
             lastLink.current.style.height = `calc(${
               ((parentSize - lastLink._start) / parentSize) * 100
             }% - 18px)`;
@@ -290,6 +300,10 @@ const Group: FC<Props> = ({
 
           link.fold = false;
           link.current.style.height = calc;
+
+          if (!isLastLink) {
+            link.next.style.height &&= calc;
+          }
         } else {
           // ROW FOLD -> here
         }
@@ -365,7 +379,9 @@ const Group: FC<Props> = ({
                 onFold={(e: React.MouseEvent) => handleCollapse(e, index)}
                 drag={index > 0}
                 direction={direction}
-              />
+              >
+                {links[index]?._currentPercent}
+              </Divider>
               <div
                 className={classes.wrapper}
                 ref={(el: HTMLDivElement) => addRef(childRef, el)}

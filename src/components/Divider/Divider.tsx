@@ -3,7 +3,14 @@ import { Direction } from "../Group/Group";
 
 import classes from "./Divider.module.css";
 
-const Divider: FC<any> = ({ setRef, onMouseDown, onFold, drag, direction }) => {
+const Divider: FC<any> = ({
+  children,
+  setRef,
+  onMouseDown,
+  onFold,
+  drag,
+  direction,
+}) => {
   return (
     <>
       {direction === Direction.Column ? (
@@ -11,7 +18,7 @@ const Divider: FC<any> = ({ setRef, onMouseDown, onFold, drag, direction }) => {
           <div className={classes.fold} onClick={onFold}>
             Fold
           </div>
-          <div className={classes.title}>Divider</div>
+          <div className={classes.title}>{children}</div>
           {drag ? (
             <div className={classes.drag} onMouseDown={onMouseDown}>
               Drag
