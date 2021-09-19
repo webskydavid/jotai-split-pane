@@ -1,0 +1,34 @@
+.root {
+  width: 100%;
+  padding-inline: 6px;
+
+  display: grid;
+  grid-template-columns: 0.3fr 1fr 0.3fr;
+
+  background: rgb(196, 238, 172);
+}
+
+.rootVertical {
+  width: 18px;
+  padding: 0;
+
+  display: flex;
+
+  background: rgb(196, 238, 172);
+}
+
+.rootDragging {
+  composes: root;
+  background-color: rgb(136, 238, 136);
+}
+
+.fold {
+  background-color: rgb(145, 145, 145);
+}
+
+.title {
+}
+
+.drag {
+  background-color: rgb(145, 145, 145);
+}

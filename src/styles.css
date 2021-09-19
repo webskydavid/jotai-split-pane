@@ -30,47 +30,40 @@ div#root {
   background-color: green;
   display: flex;
   flex-direction: column;
-  align-content: center;
-  justify-content: center;
-  align-items: center;
+  overflow-y: scroll;
 }
 
 .two {
   background-color: red;
   display: flex;
   flex-direction: column;
-  align-content: center;
-  justify-content: center;
-  align-items: center;
+  overflow-y: scroll;
 }
 
 .three {
   background-color: blue;
   display: flex;
   flex-direction: column;
-  align-content: center;
-  justify-content: center;
-  align-items: center;
+  overflow-y: scroll;
 }
 
 .divider {
   padding-inline: 6px;
   z-index: 600;
   background: rgb(42, 86, 145);
-  position: absolute;
+  /* position: absolute; */
   align-self: stretch;
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 0.2fr 1fr 0.2fr;
   align-content: center;
   justify-content: space-between;
   align-items: center;
   height: 24px;
   width: 100%;
-  transform: translateY(-12px);
+  /* transform: translateY(-12px); */
 }
 
 .divider-dragging {
-  background-color: rgb(67, 127, 206);
 }
 
 .divider > button {
@@ -84,4 +77,9 @@ div#root {
 
 .drag-button {
   cursor: row-resize;
+}
+
+ul {
+  list-style-type: none;
+  width: 100%;
 }
